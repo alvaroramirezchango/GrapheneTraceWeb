@@ -26,6 +26,6 @@ namespace GrapheneTraceWeb.Controllers
 
             // Default: user
             return RedirectToAction("Dashboard", "User");
-        }
+        }  //Prueba con commit
     }
 }

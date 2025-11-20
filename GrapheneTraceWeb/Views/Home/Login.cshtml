@@ -1,0 +1,30 @@
+﻿@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container mt-5" style="max-width: 400px;">
+    <h2 class="text-center mb-4">Graphene Trace Login</h2>
+
+    <form method="post">
+        <div class="mb-3">
+            <label>Email</label>
+            <input type="email" name="email" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label>Password</label>
+            <input type="password" name="password" class="form-control" required />
+        </div>
+
+        <div class="mb-3">
+            <label>Role</label>
+            <select name="role" class="form-select">
+                <option>User</option>
+                <option>Clinician</option>
+                <option>Admin</option>
+            </select>
+        </div>
+
+        <button class="btn btn-primary w-100 mt-3">Login</button>
+    </form>
+</div>

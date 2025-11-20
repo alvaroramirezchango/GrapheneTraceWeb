@@ -1,0 +1,53 @@
+﻿@{
+    ViewData["Title"] = "Clinician Dashboard";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Clinician Dashboard</h2>
+
+    <!-- Patient List -->
+    <div class="card p-4 mb-4 shadow-sm">
+        <h4>Patient List</h4>
+        <table class="table mt-3">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Last Measurement</th>
+                    <th>Alerts</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Sample data - to be replaced with real DB entries -->
+                <tr>
+                    <td>John Doe</td>
+                    <td>12 minutes ago</td>
+                    <td><span class="text-danger">High Pressure</span></td>
+                    <td>
+                        <a class="btn btn-primary btn-sm" href="/User/Dashboard">View Dashboard</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Maria Smith</td>
+                    <td>1 hour ago</td>
+                    <td><span class="text-success">Normal</span></td>
+                    <td>
+                        <a class="btn btn-primary btn-sm" href="/User/Dashboard">View Dashboard</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Alerts Section -->
+    <div class="card p-4 mb-4 shadow-sm">
+        <h4>Recent Alerts</h4>
+        <p>No critical alerts at the moment.</p>
+    </div>
+
+    <!-- Comments Section -->
+    <div class="card p-4 shadow-sm">
+        <h4>Messages from Users</h4>
+        <p>Messages will appear here soon...</p>
+    </div>
+</div>

@@ -1,53 +1,85 @@
-﻿@{
-    ViewData["Title"] = "Clinician Dashboard";
+﻿@model GrapheneTraceWeb.ViewModels.UserDashboardViewModel
+
+@{
+    ViewData["Title"] = "User Dashboard";
 }
 
 <div class="container mt-5">
-    <h2 class="text-center mb-4">Clinician Dashboard</h2>
+    <h2 class="mb-4 text-center">
+        User Dashboard
+        @if (Model?.User != null)
+        {
+            <span class="text-muted" style="font-size: 0.7em;"> (@Model.User.Name)</span>
+        }
+    </h2>
 
-    <!-- Patient List -->
-    <div class="card p-4 mb-4 shadow-sm">
-        <h4>Patient List</h4>
-        <table class="table mt-3">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Last Measurement</th>
-                    <th>Alerts</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Sample data - to be replaced with real DB entries -->
-                <tr>
-                    <td>John Doe</td>
-                    <td>12 minutes ago</td>
-                    <td><span class="text-danger">High Pressure</span></td>
-                    <td>
-                        <a class="btn btn-primary btn-sm" href="/User/Dashboard">View Dashboard</a>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Maria Smith</td>
-                    <td>1 hour ago</td>
-                    <td><span class="text-success">Normal</span></td>
-                    <td>
-                        <a class="btn btn-primary btn-sm" href="/User/Dashboard">View Dashboard</a>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card p-3 mb-3">
+                <h5>Peak Pressure</h5>
+                @if (Model?.LastPeakPressure != null)
+                {
+                    <p class="display-6">@Model.LastPeakPressure mmHg</p>
+                    <p class="text-muted">
+                        Last measurement: @Model.LastMeasurementTime?.ToLocalTime().ToString("g")
+                    </p>
+                }
+                else
+                {
+                    <p>No data available.</p>
+                }
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card p-3 mb-3">
+                <h5>Contact Area %</h5>
+                @if (Model?.LastContactAreaPercentage != null)
+                {
+                    <p class="display-6">@Model.LastContactAreaPercentage %</p>
+                    <p class="text-muted">Based on latest frame.</p>
+                }
+                else
+                {
+                    <p>No data available.</p>
+                }
+            </div>
+        </div>
     </div>
 
-    <!-- Alerts Section -->
-    <div class="card p-4 mb-4 shadow-sm">
-        <h4>Recent Alerts</h4>
-        <p>No critical alerts at the moment.</p>
+    <div class="card p-3 mt-4">
+        <h5>Recent Measurements</h5>
+
+        @if (Model?.RecentMeasurements == null || !Model.RecentMeasurements.Any())
+        {
+            <p>No measurements found.</p>
+        }
+        else
+        {
+            <table class="table mt-2">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Peak Pressure (mmHg)</th>
+                        <th>Contact Area (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.RecentMeasurements)
+                    {
+                        <tr>
+                            <td>@m.Timestamp.ToLocalTime().ToString("g")</td>
+                            <td>@m.PeakPressure</td>
+                            <td>@m.ContactArea</td> <!-- 👈 usamos ContactArea del modelo -->
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
     </div>
 
-    <!-- Comments Section -->
-    <div class="card p-4 shadow-sm">
-        <h4>Messages from Users</h4>
-        <p>Messages will appear here soon...</p>
+    <div class="card p-3 mt-4">
+        <h5>Pressure Evolution Chart</h5>
+        <p>Chart coming soon (we'll add Chart.js here).</p>
     </div>
 </div>

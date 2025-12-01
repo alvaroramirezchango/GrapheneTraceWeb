@@ -1,28 +1,178 @@
-﻿@{
+﻿@model GrapheneTraceWeb.ViewModels.UserDashboardViewModel
+@using System.Text.Json
+@using System.Linq
+
+@{
     ViewData["Title"] = "User Dashboard";
+
+    // Prepare chart data on the server side
+    var chartPoints = Enumerable.Empty<object>();
+
+    if (Model?.RecentMeasurements != null && Model.RecentMeasurements.Any())
+    {
+        chartPoints = Model.RecentMeasurements
+            .OrderBy(m => m.Timestamp)
+            .Select(m => new
+            {
+                time = m.Timestamp.ToLocalTime().ToString("HH:mm"),
+                peak = m.PeakPressure,
+                contact = m.ContactArea
+            });
+    }
+
+    var chartJson = JsonSerializer.Serialize(chartPoints);
 }
 
 <div class="container mt-5">
-    <h2 class="mb-4 text-center">User Dashboard</h2>
+    <h2 class="mb-4 text-center">
+        User Dashboard
+        @if (Model?.User != null)
+        {
+            <span class="text-muted" style="font-size: 0.7em;"> (@Model.User.Name)</span>
+        }
+    </h2>
 
     <div class="row">
         <div class="col-md-6">
             <div class="card p-3 mb-3">
                 <h5>Peak Pressure</h5>
-                <p>120 mmHg</p>
+                @if (Model?.LastPeakPressure != null)
+                {
+                    <p class="display-6">@Model.LastPeakPressure mmHg</p>
+                    <p class="text-muted">
+                        Last measurement: @Model.LastMeasurementTime?.ToLocalTime().ToString("g")
+                    </p>
+                }
+                else
+                {
+                    <p>No data available.</p>
+                }
             </div>
         </div>
 
         <div class="col-md-6">
             <div class="card p-3 mb-3">
                 <h5>Contact Area %</h5>
-                <p>72%</p>
+                @if (Model?.LastContactAreaPercentage != null)
+                {
+                    <p class="display-6">@Model.LastContactAreaPercentage %</p>
+                    <p class="text-muted">Based on latest frame.</p>
+                }
+                else
+                {
+                    <p>No data available.</p>
+                }
             </div>
         </div>
     </div>
 
-    <div class="card p-3 mt-3">
+    <div class="card p-3 mt-4">
+        <h5>Recent Measurements</h5>
+
+        @if (Model?.RecentMeasurements == null || !Model.RecentMeasurements.Any())
+        {
+            <p>No measurements found.</p>
+        }
+        else
+        {
+            <table class="table mt-2">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Peak Pressure (mmHg)</th>
+                        <th>Contact Area (%)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.RecentMeasurements)
+                    {
+                        <tr>
+                            <td>@m.Timestamp.ToLocalTime().ToString("g")</td>
+                            <td>@m.PeakPressure</td>
+                            <td>@m.ContactArea</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <div class="card p-3 mt-4">
         <h5>Pressure Evolution Chart</h5>
-        <p>Chart coming soon...</p>
+
+        @if (Model?.RecentMeasurements == null || !Model.RecentMeasurements.Any())
+        {
+            <p>No data available to display the chart.</p>
+        }
+        else
+        {
+            <canvas id="pressureChart" style="max-height: 350px;"></canvas>
+
+            <!-- Chart.js CDN -->
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+            <script>
+                // Read chart data serialized from server-side
+                const chartData = @Html.Raw(@chartJson);
+
+                // Extract labels and datasets
+                const labels = chartData.map(p => p.time);
+                const peakValues = chartData.map(p => p.peak);
+                const contactValues = chartData.map(p => p.contact);
+
+                // Get canvas context
+                const ctx = document.getElementById('pressureChart').getContext('2d');
+
+                // Create line chart
+                const pressureChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Peak Pressure (mmHg)',
+                                data: peakValues,
+                                borderWidth: 2,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Contact Area (%)',
+                                data: contactValues,
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Time'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Value'
+                                },
+                                beginAtZero: false
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true
+                            },
+                            tooltip: {
+                                enabled: true
+                            }
+                        }
+                    }
+                });
+            </script>
+        }
     </div>
 </div>

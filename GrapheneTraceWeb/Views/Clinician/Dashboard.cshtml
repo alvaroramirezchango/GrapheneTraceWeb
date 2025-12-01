@@ -1,76 +1,68 @@
-﻿@model GrapheneTraceWeb.ViewModels.UserDashboardViewModel
+﻿@model GrapheneTraceWeb.ViewModels.ClinicianDashboardViewModel
 
 @{
-    ViewData["Title"] = "User Dashboard";
+    ViewData["Title"] = "Clinician Dashboard";
 }
 
 <div class="container mt-5">
-    <h2 class="mb-4 text-center">
-        User Dashboard
-        @if (Model?.User != null)
+    <h2 class="mb-4 text-center">Clinician Dashboard</h2>
+
+    <div class="card p-3 mb-4">
+        <h5>Patient List</h5>
+
+        @if (Model.Patients == null || !Model.Patients.Any())
         {
-            <span class="text-muted" style="font-size: 0.7em;"> (@Model.User.Name)</span>
-        }
-    </h2>
-
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card p-3 mb-3">
-                <h5>Peak Pressure</h5>
-                @if (Model?.LastPeakPressure != null)
-                {
-                    <p class="display-6">@Model.LastPeakPressure mmHg</p>
-                    <p class="text-muted">
-                        Last measurement: @Model.LastMeasurementTime?.ToLocalTime().ToString("g")
-                    </p>
-                }
-                else
-                {
-                    <p>No data available.</p>
-                }
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="card p-3 mb-3">
-                <h5>Contact Area %</h5>
-                @if (Model?.LastContactAreaPercentage != null)
-                {
-                    <p class="display-6">@Model.LastContactAreaPercentage %</p>
-                    <p class="text-muted">Based on latest frame.</p>
-                }
-                else
-                {
-                    <p>No data available.</p>
-                }
-            </div>
-        </div>
-    </div>
-
-    <div class="card p-3 mt-4">
-        <h5>Recent Measurements</h5>
-
-        @if (Model?.RecentMeasurements == null || !Model.RecentMeasurements.Any())
-        {
-            <p>No measurements found.</p>
+            <p>No patients found.</p>
         }
         else
         {
-            <table class="table mt-2">
+            <p class="text-muted">Patients found: @Model.Patients.Count</p>
+
+            <table class="table">
                 <thead>
                     <tr>
-                        <th>Time</th>
+                        <th>Patient</th>
+                        <th>Email</th>
+                        <th>Last Measurement</th>
                         <th>Peak Pressure (mmHg)</th>
                         <th>Contact Area (%)</th>
+                        <th>Alert</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var m in Model.RecentMeasurements)
+                    @foreach (var p in Model.Patients)
                     {
-                        <tr>
-                            <td>@m.Timestamp.ToLocalTime().ToString("g")</td>
-                            <td>@m.PeakPressure</td>
-                            <td>@m.ContactArea</td> <!-- 👈 usamos ContactArea del modelo -->
+                        var rowClass = p.AlertLevel == "Critical"
+                        ? "table-danger"
+                        : p.AlertLevel == "High pressure"
+                        ? "table-warning"
+                        : string.Empty;
+
+                        <tr class="@rowClass">
+                            <td>@p.Name</td>
+                            <td>@p.Email</td>
+                            <td>
+                                @if (p.LastMeasurementTime.HasValue)
+                                {
+                                    @p.LastMeasurementTime.Value.ToLocalTime().ToString("g")
+                                }
+                                else
+                                {
+                                    @:No data
+                                }
+                            </td>
+                            <td>@(p.LastPeakPressure?.ToString() ?? "-")</td>
+                            <td>@(p.LastContactArea?.ToString() ?? "-")</td>
+                            <td>@p.AlertLevel</td>
+                            <td>
+                                <a asp-controller="User"
+                                   asp-action="Dashboard"
+                                   asp-route-id="@p.UserId"
+                                   class="btn btn-primary btn-sm">
+                                    View Dashboard
+                                </a>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -78,8 +70,33 @@
         }
     </div>
 
-    <div class="card p-3 mt-4">
-        <h5>Pressure Evolution Chart</h5>
-        <p>Chart coming soon (we'll add Chart.js here).</p>
+    <div class="card p-3">
+        <h5>Recent Alerts</h5>
+
+        @{
+            var alerts = Model.Patients
+            .Where(p => p.AlertLevel == "High pressure" || p.AlertLevel == "Critical")
+            .ToList();
+        }
+
+        @if (!alerts.Any())
+        {
+            <p>No critical alerts at the moment.</p>
+        }
+        else
+        {
+            <ul>
+                @foreach (var a in alerts)
+                {
+                    <li>
+                        <strong>@a.AlertLevel</strong> for @a.Name
+                        @if (a.LastMeasurementTime.HasValue)
+                        {
+                            @: (last measurement @a.LastMeasurementTime.Value.ToLocalTime().ToString("g"))
+                        }
+                    </li>
+                }
+            </ul>
+        }
     </div>
 </div>

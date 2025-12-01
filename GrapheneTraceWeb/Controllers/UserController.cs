@@ -14,15 +14,15 @@ namespace GrapheneTraceWeb.Controllers
             _context = context;
         }
 
-        public IActionResult Dashboard()
+        public IActionResult Dashboard(int? id)
         {
-            // De momento usamos siempre al primer usuario con rol "User" (Alice)
-            var user = _context.Users.FirstOrDefault(u => u.Role == "User");
+            var user = id.HasValue
+                ? _context.Users.FirstOrDefault(u => u.Id == id.Value)
+                : _context.Users.FirstOrDefault(u => u.Role == "User");
 
             if (user == null)
             {
-                // Si no hay usuarios, devolvemos un modelo vacío
-                return View(new UserDashboardViewModel());
+                return NotFound();
             }
 
             var measurements = _context.PressureData
@@ -36,7 +36,6 @@ namespace GrapheneTraceWeb.Controllers
             {
                 User = user,
                 LastPeakPressure = last?.PeakPressure,
-                // Aquí usamos ContactArea (como se llama en tu modelo)
                 LastContactAreaPercentage = last?.ContactArea,
                 LastMeasurementTime = last?.Timestamp,
                 RecentMeasurements = measurements
@@ -44,5 +43,6 @@ namespace GrapheneTraceWeb.Controllers
 
             return View(vm);
         }
+
     }
 }

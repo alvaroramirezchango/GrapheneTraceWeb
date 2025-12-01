@@ -1,30 +1,43 @@
-﻿@{
+﻿@model GrapheneTraceWeb.ViewModels.LoginViewModel
+
+@{
     ViewData["Title"] = "Login";
 }
 
-<div class="container mt-5" style="max-width: 400px;">
-    <h2 class="text-center mb-4">Graphene Trace Login</h2>
+<div class="container mt-5" style="max-width: 450px;">
+    <h2 class="mb-4 text-center">Login</h2>
 
-    <form method="post">
+    @* Validation summary for model errors *@
+    @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+    {
+        <div class="alert alert-danger">
+            <ul>
+                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    <li>@error.ErrorMessage</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <form asp-action="Login" method="post">
         <div class="mb-3">
-            <label>Email</label>
-            <input type="email" name="email" class="form-control" required />
+            <label asp-for="Email" class="form-label"></label>
+            <input asp-for="Email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
         </div>
 
         <div class="mb-3">
-            <label>Password</label>
-            <input type="password" name="password" class="form-control" required />
+            <label asp-for="Password" class="form-label"></label>
+            <input asp-for="Password" type="password" class="form-control" />
+            <span asp-validation-for="Password" class="text-danger"></span>
         </div>
 
-        <div class="mb-3">
-            <label>Role</label>
-            <select name="role" class="form-select">
-                <option>User</option>
-                <option>Clinician</option>
-                <option>Admin</option>
-            </select>
-        </div>
-
-        <button class="btn btn-primary w-100 mt-3">Login</button>
+        <button type="submit" class="btn btn-primary w-100">Login</button>
     </form>
 </div>
+
+@section Scripts {
+    @* Client-side validation scripts *@
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -16,33 +16,62 @@ namespace GrapheneTraceWeb.Controllers
 
         public IActionResult Dashboard(int? id)
         {
-            var user = id.HasValue
-                ? _context.Users.FirstOrDefault(u => u.Id == id.Value)
-                : _context.Users.FirstOrDefault(u => u.Role == "User");
+            var sessionUserId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+            var role = HttpContext.Session.GetString(SessionKeys.UserRole);
+
+            if (sessionUserId == null || string.IsNullOrEmpty(role))
+            {
+                return RedirectToAction("Login", "Home");
+            }
+
+            int targetUserId;
+
+            // Case 1: normal user -> always see their own dashboard
+            if (role == "User")
+            {
+                targetUserId = sessionUserId.Value;
+            }
+            // Case 2: clinician or admin -> needs a patient id in the query string
+            else if ((role == "Clinician" || role == "Admin") && id.HasValue)
+            {
+                targetUserId = id.Value;
+            }
+            else
+            {
+                // No permission or missing patient id
+                return RedirectToAction("Login", "Home");
+            }
+
+            // Make sure the target user exists and is a "User" (patient)
+            var user = _context.Users
+                .FirstOrDefault(u => u.Id == targetUserId && u.Role == "User");
 
             if (user == null)
             {
                 return NotFound();
             }
 
-            var measurements = _context.PressureData
-                .Where(p => p.UserId == user.Id)
+            // Load recent pressure data for this user
+            var recentMeasurements = _context.PressureData
+                .Where(p => p.UserId == targetUserId)
                 .OrderByDescending(p => p.Timestamp)
+                .Take(10)
                 .ToList();
 
-            var last = measurements.FirstOrDefault();
+            var lastMeasurement = recentMeasurements.FirstOrDefault();
 
-            var vm = new UserDashboardViewModel
+            var viewModel = new UserDashboardViewModel
             {
                 User = user,
-                LastPeakPressure = last?.PeakPressure,
-                LastContactAreaPercentage = last?.ContactArea,
-                LastMeasurementTime = last?.Timestamp,
-                RecentMeasurements = measurements
+                LastPeakPressure = lastMeasurement?.PeakPressure,
+                LastContactAreaPercentage = lastMeasurement?.ContactArea,
+                LastMeasurementTime = lastMeasurement?.Timestamp,
+                RecentMeasurements = recentMeasurements
             };
 
-            return View(vm);
+            return View(viewModel);
         }
+
 
     }
 }

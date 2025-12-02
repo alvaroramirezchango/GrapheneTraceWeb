@@ -1,6 +1,7 @@
-﻿using GrapheneTraceWeb.Data;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using GrapheneTraceWeb.Data;
 using GrapheneTraceWeb.Models;
-using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 
 namespace GrapheneTraceWeb.Controllers
@@ -8,6 +9,14 @@ namespace GrapheneTraceWeb.Controllers
     public class AdminController : Controller
     {
         private readonly AppDbContext _context;
+
+
+        // Helper method to verify Admin access
+        private bool IsAdmin()
+        {
+            var role = HttpContext.Session.GetString(SessionKeys.UserRole);
+            return role == "Admin";
+        }
 
         public AdminController(AppDbContext context)
         {
@@ -17,6 +26,11 @@ namespace GrapheneTraceWeb.Controllers
         // List all users
         public IActionResult Dashboard()
         {
+            if (!IsAdmin())
+            {
+                return RedirectToAction("Login", "Home");
+            }
+
             var users = _context.Users
                 .OrderBy(u => u.Role)
                 .ThenBy(u => u.Name)

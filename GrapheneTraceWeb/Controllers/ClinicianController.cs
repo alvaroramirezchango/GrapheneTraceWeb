@@ -1,4 +1,6 @@
-﻿using GrapheneTraceWeb.Data;
+﻿using Microsoft.AspNetCore.Http;
+using GrapheneTraceWeb;
+using GrapheneTraceWeb.Data;
 using GrapheneTraceWeb.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -18,6 +20,14 @@ namespace GrapheneTraceWeb.Controllers
 
         public IActionResult Dashboard()
         {
+            var userId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+            var role = HttpContext.Session.GetString(SessionKeys.UserRole);
+            // Allow both Clinician and Admin to access this dashboard
+            if (userId == null || (role != "Clinician" && role != "Admin"))
+
+            {
+                return RedirectToAction("Login", "Home");
+            }
             // Get all users that are patients (role "User")
             var users = _context.Users
                 .Where(u => u.Role == "User")

@@ -1,43 +1,57 @@
-﻿@model GrapheneTraceWeb.ViewModels.LoginViewModel
-
-@{
+﻿@{
     ViewData["Title"] = "Login";
 }
 
-<div class="container mt-5" style="max-width: 450px;">
-    <h2 class="mb-4 text-center">Login</h2>
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow-lg" style="width: 420px; border-radius: 20px;">
+        <div class="card-body">
+            <h2 class="text-center mb-4">Login</h2>
 
-    @* Validation summary for model errors *@
-    @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
-    {
-        <div class="alert alert-danger">
-            <ul>
-                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                {
-                    <li>@error.ErrorMessage</li>
-                }
-            </ul>
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <li>@error.ErrorMessage</li>
+                        }
+                    </ul>
+                </div>
+            }
+
+            <form asp-action="Login" method="post">
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input id="email"
+                           name="email"
+                           type="email"
+                           class="form-control"
+                           required />
+                </div>
+
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input id="password"
+                           name="password"
+                           type="password"
+                           class="form-control"
+                           required />
+                </div>
+
+                <div class="mb-3">
+                    <label for="role" class="form-label">Role</label>
+                    <select id="role" name="role" class="form-select" required>
+                        <option value="">-- Select role --</option>
+                        <option value="User">User</option>
+                        <option value="Clinician">Clinician</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100">
+                    Login
+                </button>
+            </form>
         </div>
-    }
-
-    <form asp-action="Login" method="post">
-        <div class="mb-3">
-            <label asp-for="Email" class="form-label"></label>
-            <input asp-for="Email" class="form-control" />
-            <span asp-validation-for="Email" class="text-danger"></span>
-        </div>
-
-        <div class="mb-3">
-            <label asp-for="Password" class="form-label"></label>
-            <input asp-for="Password" type="password" class="form-control" />
-            <span asp-validation-for="Password" class="text-danger"></span>
-        </div>
-
-        <button type="submit" class="btn btn-primary w-100">Login</button>
-    </form>
+    </div>
 </div>
-
-@section Scripts {
-    @* Client-side validation scripts *@
-    <partial name="_ValidationScriptsPartial" />
-}

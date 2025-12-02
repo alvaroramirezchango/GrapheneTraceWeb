@@ -1,3 +1,6 @@
+using Microsoft.AspNetCore.Http;
+using GrapheneTraceWeb.Data;
+using GrapheneTraceWeb.Models;
 using GrapheneTraceWeb.Data;
 using GrapheneTraceWeb.Models;
 using GrapheneTraceWeb.ViewModels;
@@ -32,35 +35,27 @@ namespace GrapheneTraceWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login(LoginViewModel model)
+        public IActionResult Login(string email, string password, string role)
         {
-            if (!ModelState.IsValid)
-            {
-                // Validation errors in the form
-                return View(model);
-            }
-
-            // Look for user by email
-            var user = _context.Users.FirstOrDefault(u => u.Email == model.Email);
+            // Find user in database
+            var user = _context.Users
+                .FirstOrDefault(u => u.Email == email && u.Password == password && u.Role == role);
 
             if (user == null)
             {
-                ModelState.AddModelError(string.Empty, "User not found.");
-                return View(model);
+                ModelState.AddModelError(string.Empty, "Invalid credentials.");
+                return View();
             }
 
-            // Simple password check (for academic purposes, no hashing)
-            if (user.Password != model.Password)
-            {
-                ModelState.AddModelError(string.Empty, "Incorrect password.");
-                return View(model);
-            }
+            // Store user in session
+            HttpContext.Session.SetInt32(SessionKeys.UserId, user.Id);
+            HttpContext.Session.SetString(SessionKeys.UserName, user.Name);
+            HttpContext.Session.SetString(SessionKeys.UserRole, user.Role);
 
-            // Redirect based on user role
+            // Redirect based on role
             if (user.Role == "User")
             {
-                // Redirect to that specific user's dashboard
-                return RedirectToAction("Dashboard", "User", new { id = user.Id });
+                return RedirectToAction("Dashboard", "User");
             }
             else if (user.Role == "Clinician")
             {
@@ -68,13 +63,19 @@ namespace GrapheneTraceWeb.Controllers
             }
             else if (user.Role == "Admin")
             {
-                
                 return RedirectToAction("Dashboard", "Admin");
             }
 
-            // Fallback: go to home if role is unknown
+            // Fallback
             return RedirectToAction("Index");
         }
+        public IActionResult Logout()
+        {
+            // Clear all session data for the user
+            HttpContext.Session.Clear();
+            return RedirectToAction("Login");
+        }
+
 
         public IActionResult Privacy()
         {

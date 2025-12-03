@@ -1,8 +1,52 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="hero-home py-5">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <h1 class="display-4 fw-bold mb-3">
+                GrapheneTrace Pressure Monitoring
+            </h1>
+
+            <p class="lead text-muted mb-4">
+                Prototype platform for continuous pressure tracking and clinical assessment.
+            </p>
+
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <a asp-controller="User"
+                   asp-action="Dashboard"
+                   class="btn btn-primary btn-lg">
+                    Open User Dashboard
+                </a>
+
+                <a asp-controller="Clinician"
+                   asp-action="Dashboard"
+                   class="btn btn-outline-secondary btn-lg">
+                    Clinician View
+                </a>
+
+                <a asp-controller="Admin"
+                   asp-action="Dashboard"
+                   class="btn btn-outline-secondary btn-lg">
+                    Admin Panel
+                </a>
+            </div>
+
+            <p class="text-muted small">
+                Designed as an academic prototype to explore data-driven pressure monitoring workflows.
+            </p>
+        </div>
+
+        <div class="col-lg-5 mt-4 mt-lg-0">
+            <div class="hero-summary-card shadow-sm p-4 rounded-3 bg-white">
+                <h5 class="fw-semibold mb-3">At a glance</h5>
+                <ul class="list-unstyled mb-0 small text-muted">
+                    <li class="mb-2">• Centralised dashboards for users, clinicians and admins.</li>
+                    <li class="mb-2">• Recent measurements and pressure evolution charts.</li>
+                    <li class="mb-2">• Simple web interface for academic demonstrations.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>

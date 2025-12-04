@@ -1,6 +1,7 @@
 ﻿@model GrapheneTraceWeb.ViewModels.UserDashboardViewModel
 @using System.Text.Json
 @using System.Linq
+@inject GrapheneTraceWeb.Data.AppDbContext AppDb
 
 @{
     ViewData["Title"] = "User Dashboard";
@@ -24,6 +25,15 @@
 }
 
 <div class="container mt-5">
+
+    @* Success alert when a comment is saved *@
+    @if (TempData["CommentSaved"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["CommentSaved"]
+        </div>
+    }
+
     <h2 class="mb-4 text-center">
         User Dashboard
         @if (Model?.User != null)
@@ -81,6 +91,7 @@
                         <th>Time</th>
                         <th>Peak Pressure (mmHg)</th>
                         <th>Contact Area (%)</th>
+                        <th>Comment</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -90,6 +101,14 @@
                             <td>@m.Timestamp.ToLocalTime().ToString("g")</td>
                             <td>@m.PeakPressure</td>
                             <td>@m.ContactArea</td>
+                            <td>
+                                <a asp-controller="User"
+                                   asp-action="AddComment"
+                                   asp-route-pressureDataId="@m.Id"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Add comment
+                                </a>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -106,7 +125,9 @@
         }
         else
         {
-            <canvas id="pressureChart" style="max-height: 350px;"></canvas>
+            <div style="position: relative; height: 350px;">
+                <canvas id="pressureChart"></canvas>
+            </div>
 
             <!-- Chart.js CDN -->
             <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -173,6 +194,66 @@
                     }
                 });
             </script>
+        }
+    </div>
+
+    <div class="card p-3 mt-4">
+        <h5>Recent Comments</h5>
+
+        @{
+            // Load last 10 comments for this user
+            var comments = Enumerable.Empty<GrapheneTraceWeb.Models.Comment>();
+
+            if (Model?.User != null)
+            {
+                comments = AppDb.Comments
+                .Where(c => c.UserId == Model.User.Id)
+                .OrderByDescending(c => c.Timestamp)
+                .Take(10)
+                .ToList();
+            }
+        }
+
+        @if (!comments.Any())
+        {
+            <p class="text-muted">No comments have been added yet.</p>
+        }
+        else
+        {
+            <table class="table mt-2">
+                <thead>
+                    <tr>
+                        <th>Comment time</th>
+                        <th>Measurement time</th>
+                        <th>Comment</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in comments)
+                    {
+                        // Try to fetch the related measurement timestamp
+                        var measurementTime = AppDb.PressureData
+                        .Where(p => p.Id == c.PressureDataId)
+                        .Select(p => p.Timestamp)
+                        .FirstOrDefault();
+
+                        <tr>
+                            <td>@c.Timestamp.ToLocalTime().ToString("g")</td>
+                            <td>
+                                @if (measurementTime != default(DateTime))
+                                {
+                                    @measurementTime.ToLocalTime().ToString("g")
+                                }
+                                else
+                                {
+                                    @:N/A
+                                }
+                            </td>
+                            <td>@c.Text</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         }
     </div>
 </div>

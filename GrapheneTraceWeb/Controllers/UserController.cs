@@ -1,7 +1,10 @@
-﻿using GrapheneTraceWeb.Data;
-using GrapheneTraceWeb.ViewModels;
-using Microsoft.AspNetCore.Mvc;
+﻿using System;
 using System.Linq;
+using GrapheneTraceWeb.Data;
+using GrapheneTraceWeb.Models;
+using GrapheneTraceWeb.ViewModels;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace GrapheneTraceWeb.Controllers
 {
@@ -14,6 +17,9 @@ namespace GrapheneTraceWeb.Controllers
             _context = context;
         }
 
+        // =========================
+        // User Dashboard
+        // =========================
         public IActionResult Dashboard(int? id)
         {
             var sessionUserId = HttpContext.Session.GetInt32(SessionKeys.UserId);
@@ -72,6 +78,89 @@ namespace GrapheneTraceWeb.Controllers
             return View(viewModel);
         }
 
+        // =========================
+        // Add Comment (GET)
+        // User adds a comment for a specific PressureData entry
+        // =========================
+        [HttpGet]
+        public IActionResult AddComment(int pressureDataId)
+        {
+            var sessionUserId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+            var role = HttpContext.Session.GetString(SessionKeys.UserRole);
 
+            // Only logged-in normal users can add comments in this prototype
+            if (sessionUserId == null || role != "User")
+            {
+                return RedirectToAction("Login", "Home");
+            }
+
+            // Ensure the measurement exists and belongs to the logged-in user
+            var measurement = _context.PressureData
+                .FirstOrDefault(p => p.Id == pressureDataId && p.UserId == sessionUserId.Value);
+
+            if (measurement == null)
+            {
+                return NotFound();
+            }
+
+            var model = new Comment
+            {
+                PressureDataId = measurement.Id
+                // UserId will be set on POST
+            };
+
+            return View(model);
+        }
+
+        // =========================
+        // Add Comment (POST)
+        // =========================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AddComment(Comment model)
+        {
+            var sessionUserId = HttpContext.Session.GetInt32(SessionKeys.UserId);
+            var role = HttpContext.Session.GetString(SessionKeys.UserRole);
+
+            if (sessionUserId == null || role != "User")
+            {
+                return RedirectToAction("Login", "Home");
+            }
+
+            // Basic manual validation for text
+            if (string.IsNullOrWhiteSpace(model.Text))
+            {
+                ModelState.AddModelError("Text", "Comment text is required.");
+            }
+
+            // Confirm the measurement exists and belongs to this user
+            var measurement = _context.PressureData
+                .FirstOrDefault(p => p.Id == model.PressureDataId && p.UserId == sessionUserId.Value);
+
+            if (measurement == null)
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // Stay on the same page and show validation errors
+                return View(model);
+            }
+
+            // Set fields that are not posted from the form
+            model.UserId = sessionUserId.Value;
+            model.Timestamp = DateTime.Now;
+
+            _context.Comments.Add(model);
+            _context.SaveChanges();
+
+            // Show success message once
+            TempData["CommentSaved"] = "Your comment has been saved successfully.";
+
+            // User always goes back to their own dashboard
+            return RedirectToAction("Dashboard");
+        }
     }
 }
+

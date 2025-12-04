@@ -8,24 +8,36 @@ namespace GrapheneTraceWeb.Models
     {
         public int Id { get; set; }
 
-        // The patient who wrote the comment OR the patient the comment belongs to
-        [Required]
+        // Foreign key: the measurement this comment is about
+        public int PressureDataId { get; set; }
+
+        [ForeignKey("PressureDataId")]
+        public PressureData? PressureData { get; set; }
+
+        // Patient (user) who wrote the comment
         public int UserId { get; set; }
 
         [ForeignKey("UserId")]
-        public User User { get; set; }
+        public User? User { get; set; }
 
-        // Clinician responding (nullable because patient may comment first)
+        // Optional clinician replying to the comment
         public int? ClinicianId { get; set; }
 
         [ForeignKey("ClinicianId")]
-        public User Clinician { get; set; }
+        public User? Clinician { get; set; }
 
-        // The actual text message
+        // Optional parent comment (for threaded replies)
+        public int? ParentCommentId { get; set; }
+
+        [ForeignKey("ParentCommentId")]
+        public Comment? ParentComment { get; set; }
+
+        // Actual comment text - this is the ONLY required field
         [Required]
-        public string Text { get; set; }
+        [StringLength(500)]
+        public string Text { get; set; } = string.Empty;
 
-        // When the comment was written
+        // When the comment was created
         public DateTime Timestamp { get; set; } = DateTime.Now;
     }
 }

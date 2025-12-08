@@ -1,4 +1,6 @@
 ﻿@model GrapheneTraceWeb.ViewModels.ClinicianDashboardViewModel
+@using System.Linq
+@inject GrapheneTraceWeb.Data.AppDbContext AppDb
 
 @{
     ViewData["Title"] = "Clinician Dashboard";
@@ -6,6 +8,14 @@
 
 <div class="container mt-5">
     <h2 class="mb-4 text-center">Clinician Dashboard</h2>
+
+    @* Success message for replies *@
+    @if (TempData["ReplySaved"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["ReplySaved"]
+        </div>
+    }
 
     <div class="card p-3 mb-4">
         <h5>Patient List</h5>
@@ -70,7 +80,7 @@
         }
     </div>
 
-    <div class="card p-3">
+    <div class="card p-3 mb-4">
         <h5>Recent Alerts</h5>
 
         @{
@@ -97,6 +107,94 @@
                     </li>
                 }
             </ul>
+        }
+    </div>
+
+    <div class="card p-3 mb-4">
+        <h5>Recent Patient Comments</h5>
+
+        @{
+            // Top-level comments written by patients (no ParentCommentId, no ClinicianId)
+            var comments = AppDb.Comments
+            .Where(c => c.ParentCommentId == null && c.ClinicianId == null)
+            .OrderByDescending(c => c.Timestamp)
+            .Take(10)
+            .ToList();
+        }
+
+        @if (!comments.Any())
+        {
+            <p class="text-muted">No patient comments available.</p>
+        }
+        else
+        {
+            <table class="table mt-2">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Comment time</th>
+                        <th>Measurement time</th>
+                        <th>Comment</th>
+                        <th>Clinician reply</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in comments)
+                    {
+                        var patient = AppDb.Users.FirstOrDefault(u => u.Id == c.UserId);
+                        var measurementTime = AppDb.PressureData
+                        .Where(p => p.Id == c.PressureDataId)
+                        .Select(p => p.Timestamp)
+                        .FirstOrDefault();
+
+                        // Find reply (if any)
+                        var reply = AppDb.Comments
+                        .FirstOrDefault(r => r.ParentCommentId == c.Id && r.ClinicianId != null);
+
+                        <tr>
+                            <td>@(patient?.Name ?? "Unknown")</td>
+                            <td>@c.Timestamp.ToLocalTime().ToString("g")</td>
+                            <td>
+                                @if (measurementTime != default(DateTime))
+                                {
+                                    @measurementTime.ToLocalTime().ToString("g")
+                                }
+                                else
+                                {
+                                    @:N/A
+                                }
+                            </td>
+                            <td>@c.Text</td>
+                            <td>
+                                @if (reply != null)
+                                {
+                                    @reply.Text
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No reply yet</span>
+                                }
+                            </td>
+                            <td>
+                                @if (reply == null)
+                                {
+                                    <a asp-controller="Clinician"
+                                       asp-action="ReplyComment"
+                                       asp-route-id="@c.Id"
+                                       class="btn btn-sm btn-outline-primary">
+                                        Reply
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Replied</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         }
     </div>
 </div>

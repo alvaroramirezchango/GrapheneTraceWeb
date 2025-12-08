@@ -48,7 +48,7 @@ namespace GrapheneTraceWeb.Controllers
                 return RedirectToAction("Login", "Home");
             }
 
-            // Make sure the target user exists and is a "User" (patient)
+            // Ensure the target user exists and is a patient
             var user = _context.Users
                 .FirstOrDefault(u => u.Id == targetUserId && u.Role == "User");
 
@@ -66,21 +66,47 @@ namespace GrapheneTraceWeb.Controllers
 
             var lastMeasurement = recentMeasurements.FirstOrDefault();
 
+            // Compute alert level based on last peak pressure
+            var alertLevel = GetAlertLevel(lastMeasurement?.PeakPressure);
+
             var viewModel = new UserDashboardViewModel
             {
                 User = user,
                 LastPeakPressure = lastMeasurement?.PeakPressure,
                 LastContactAreaPercentage = lastMeasurement?.ContactArea,
                 LastMeasurementTime = lastMeasurement?.Timestamp,
-                RecentMeasurements = recentMeasurements
+                RecentMeasurements = recentMeasurements,
+                AlertLevel = alertLevel
             };
 
             return View(viewModel);
         }
 
         // =========================
+        // Helper: alert level logic
+        // =========================
+        /// <summary>
+        /// Returns a human-readable alert level for the given peak pressure.
+        /// </summary>
+        private string GetAlertLevel(double? peak)
+        {
+            if (!peak.HasValue)
+                return "No data";
+
+            if (peak.Value >= 130)
+                return "Critical";
+
+            if (peak.Value >= 120)
+                return "High pressure";
+
+            if (peak.Value >= 90)
+                return "Normal";
+
+            return "Low pressure";
+        }
+
+        // =========================
         // Add Comment (GET)
-        // User adds a comment for a specific PressureData entry
         // =========================
         [HttpGet]
         public IActionResult AddComment(int pressureDataId)
@@ -127,7 +153,13 @@ namespace GrapheneTraceWeb.Controllers
                 return RedirectToAction("Login", "Home");
             }
 
-            // Basic manual validation for text
+            // Ignore validation for navigation properties
+            ModelState.Remove("PressureData");
+            ModelState.Remove("User");
+            ModelState.Remove("Clinician");
+            ModelState.Remove("ParentComment");
+
+            // Validate text field
             if (string.IsNullOrWhiteSpace(model.Text))
             {
                 ModelState.AddModelError("Text", "Comment text is required.");
@@ -144,7 +176,6 @@ namespace GrapheneTraceWeb.Controllers
 
             if (!ModelState.IsValid)
             {
-                // Stay on the same page and show validation errors
                 return View(model);
             }
 
@@ -155,7 +186,6 @@ namespace GrapheneTraceWeb.Controllers
             _context.Comments.Add(model);
             _context.SaveChanges();
 
-            // Show success message once
             TempData["CommentSaved"] = "Your comment has been saved successfully.";
 
             // User always goes back to their own dashboard
@@ -163,4 +193,3 @@ namespace GrapheneTraceWeb.Controllers
         }
     }
 }
-

@@ -119,6 +119,53 @@
     <div class="card p-3 mt-4">
         <h5>Pressure Evolution Chart</h5>
 
+        @* Time range selector for the chart *@
+        <form asp-action="Dashboard" asp-controller="User" method="get" class="mb-3">
+            @* Keep the patient id so clinicians/admins stay on the same user *@
+            @if (Model?.User != null)
+            {
+                <input type="hidden" name="id" value="@Model.User.Id" />
+            }
+
+            <div class="btn-group" role="group" aria-label="Time range selector">
+                <button type="submit"
+                        name="timeRange"
+                        value="all"
+                        class="btn btn-sm @(Model.SelectedRange == "all" ? "btn-primary" : "btn-outline-primary")">
+                    All
+                </button>
+
+                <button type="submit"
+                        name="timeRange"
+                        value="1h"
+                        class="btn btn-sm @(Model.SelectedRange == "1h" ? "btn-primary" : "btn-outline-primary")">
+                    Last 1h
+                </button>
+
+                <button type="submit"
+                        name="timeRange"
+                        value="6h"
+                        class="btn btn-sm @(Model.SelectedRange == "6h" ? "btn-primary" : "btn-outline-primary")">
+                    Last 6h
+                </button>
+
+                <button type="submit"
+                        name="timeRange"
+                        value="24h"
+                        class="btn btn-sm @(Model.SelectedRange == "24h" ? "btn-primary" : "btn-outline-primary")">
+                    Last 24h
+                </button>
+
+                <button type="submit"
+                        name="timeRange"
+                        value="7d"
+                        class="btn btn-sm @(Model.SelectedRange == "7d" ? "btn-primary" : "btn-outline-primary")">
+                    Last 7 days
+                </button>
+            </div>
+
+        </form>
+
         @if (Model?.RecentMeasurements == null || !Model.RecentMeasurements.Any())
         {
             <p>No data available to display the chart.</p>
@@ -151,7 +198,7 @@
                         labels: labels,
                         datasets: [
                             {
-                                label: 'Peak Pressure (mmHg)',
+                                label: 'Peak Pressure (mmHg) - @Model.SelectedRange',
                                 data: peakValues,
                                 borderWidth: 2,
                                 tension: 0.3

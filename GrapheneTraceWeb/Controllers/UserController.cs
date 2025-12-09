@@ -20,7 +20,7 @@ namespace GrapheneTraceWeb.Controllers
         // =========================
         // User Dashboard
         // =========================
-        public IActionResult Dashboard(int? id)
+        public IActionResult Dashboard(int? id, string timeRange = "all")
         {
             var sessionUserId = HttpContext.Session.GetInt32(SessionKeys.UserId);
             var role = HttpContext.Session.GetString(SessionKeys.UserRole);
@@ -57,14 +57,27 @@ namespace GrapheneTraceWeb.Controllers
                 return NotFound();
             }
 
-            // Load recent pressure data for this user
-            var recentMeasurements = _context.PressureData
-                .Where(p => p.UserId == targetUserId)
-                .OrderByDescending(p => p.Timestamp)
-                .Take(10)
+            // Calculate starting date based on selected time range
+            DateTime? fromDate = GetFromDate(timeRange);
+
+            // Load pressure data for this user
+            var measurementsQuery = _context.PressureData
+                .Where(p => p.UserId == targetUserId);
+
+            if (fromDate.HasValue)
+            {
+                // Filter measurements by selected time range
+                measurementsQuery = measurementsQuery
+                    .Where(p => p.Timestamp >= fromDate.Value);
+            }
+
+            // Order ascending for the chart
+            var recentMeasurements = measurementsQuery
+                .OrderBy(p => p.Timestamp)
                 .ToList();
 
-            var lastMeasurement = recentMeasurements.FirstOrDefault();
+            // Last measurement is the most recent one
+            var lastMeasurement = recentMeasurements.LastOrDefault();
 
             // Compute alert level based on last peak pressure
             var alertLevel = GetAlertLevel(lastMeasurement?.PeakPressure);
@@ -76,7 +89,9 @@ namespace GrapheneTraceWeb.Controllers
                 LastContactAreaPercentage = lastMeasurement?.ContactArea,
                 LastMeasurementTime = lastMeasurement?.Timestamp,
                 RecentMeasurements = recentMeasurements,
-                AlertLevel = alertLevel
+                AlertLevel = alertLevel,
+                // Store selected time range so the view can highlight the active button
+                SelectedRange = timeRange
             };
 
             return View(viewModel);
@@ -103,6 +118,39 @@ namespace GrapheneTraceWeb.Controllers
                 return "Normal";
 
             return "Low pressure";
+        }
+
+        // =========================
+        // Helper: time range logic
+        // =========================
+        /// <summary>
+        /// Returns the starting DateTime for the given time range.
+        /// "all" or unknown values return null (no time filter).
+        /// </summary>
+        private DateTime? GetFromDate(string timeRange)
+        {
+            if (string.IsNullOrWhiteSpace(timeRange) || timeRange == "all")
+            {
+                // No filter by time
+                return null;
+            }
+
+            DateTime now = DateTime.Now;
+
+            switch (timeRange)
+            {
+                case "1h":
+                    return now.AddHours(-1);
+                case "6h":
+                    return now.AddHours(-6);
+                case "24h":
+                    return now.AddHours(-24);
+                case "7d":
+                    return now.AddDays(-7);
+                default:
+                    // Unknown -> do not filter
+                    return null;
+            }
         }
 
         // =========================
